@@ -1,5 +1,5 @@
 module NineteenNinetynine
-  class Core
+  class Subscriber
     def start
       subscribe_to_events
     end
@@ -15,12 +15,18 @@ module NineteenNinetynine
         when "EVENT"
           case payload[1]
           when "content"
+            puts payload
 
 
           when "user"
 
           end
         end
+      end
+
+      ws.on :open do
+        ws.send JSON.generate(['REQ', 'content', { kinds: [1] }])
+        ws.send JSON.generate(['REQ', 'user', { kinds: [0] }])
       end
     end
   end
