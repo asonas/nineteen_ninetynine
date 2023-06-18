@@ -2,12 +2,14 @@ PATH
   remote: .
   specs:
     nineteen_ninetynine (0.1.0)
+      eventmachine
 
 GEM
   remote: https://rubygems.org/
   specs:
     ast (2.4.2)
     diff-lcs (1.5.0)
+    eventmachine (1.2.7)
     json (2.6.3)
     parallel (1.23.0)
     parser (3.2.2.3)

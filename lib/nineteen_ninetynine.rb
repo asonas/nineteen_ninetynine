@@ -3,21 +3,34 @@
 require_relative "nineteen_ninetynine/version"
 require_relative "nineteen_ninetynine/renderer"
 require_relative "nineteen_ninetynine/subscriber"
-require "drb/drb"
-require "drb/unix"
+require 'eventmachine'
+require 'readline'
 
 module NineteenNinetynine
-  DRB_UNIX_SOCKET = "drbunix:/tmp/nineteen_ninetynine"
-
   class Error < StandardError; end
 
   def self.start
-    child_pid = fork do
-      subscriber = Subscriber.new
-      DRb.start_service(DRB_UNIX_SOCKET, subscriber, safe_level: 1)
-    end
-    Renderer.new.output
+    EM.run do
+      Thread.start do
+        while buf = Readline.readline("Nostr: ", true)
+          unless Readline::HISTORY.count == 1
+            Readline::HISTORY.pop if buf.empty? || Readline::HISTORY[-1] == Readline::HISTORY[-2]
+          end
+          #sync {
+          #  reload unless config[:reload] == false
+          #  store_history
+          #  input(buf.strip)
+          #}
+          puts buf.strip
+        end
+        # unexpected
+        #stop
+      end
 
-    Process.waitpid(child_pid)
+      Subscriber.new.start
+      EM.add_periodic_timer(3) do
+
+      end
+    end
   end
 end
