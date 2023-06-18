@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require_relative "nineteen_ninetynine/version"
+require_relative "nineteen_ninetynine/renderer"
+require_relative "nineteen_ninetynine/subscriber"
 require "drb/drb"
 require "drb/unix"
 
@@ -10,7 +12,7 @@ module NineteenNinetynine
   class Error < StandardError; end
 
   def self.start
-    child_pid fork do
+    child_pid = fork do
       subscriber = Subscriber.new
       DRb.start_service(DRB_UNIX_SOCKET, subscriber, safe_level: 1)
     end
