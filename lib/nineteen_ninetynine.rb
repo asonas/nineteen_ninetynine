@@ -1,36 +1,118 @@
 # frozen_string_literal: true
 
 require_relative "nineteen_ninetynine/version"
+
+require_relative "nineteen_ninetynine/core"
+require_relative "nineteen_ninetynine/ext"
 require_relative "nineteen_ninetynine/renderer"
+require_relative "nineteen_ninetynine/id_var"
+require_relative "nineteen_ninetynine/initializer"
+require_relative "nineteen_ninetynine/output"
 require_relative "nineteen_ninetynine/subscriber"
-require 'eventmachine'
-require 'readline'
+require_relative "nineteen_ninetynine/event/note"
+require_relative "nineteen_ninetynine/utils"
+
+require "active_support/cache"
+require "active_support/notifications"
+require "eventmachine"
+require "json"
+require "monitor"
+require "readline"
+require "stringio"
+require "thread"
 
 module NineteenNinetynine
+  extend Core
+  extend Initializer
+  extend Renderer
+  extend Output
+  extend IdVar
+
+  User = Data.define :name, :pubkey
+  Item = Data.define :content, :user, :date
+
   class Error < StandardError; end
+  XDG_CONFIG_DIR = "~/.config/1999"
+  @users = []
+  @items = []
+  $cache = ActiveSupport::Cache::MemoryStore.new
+  $cache.write("item_queue", [])
+  $cache.write("users", [])
 
-  def self.start
-    EM.run do
-      Thread.start do
-        while buf = Readline.readline("Nostr: ", true)
-          unless Readline::HISTORY.count == 1
-            Readline::HISTORY.pop if buf.empty? || Readline::HISTORY[-1] == Readline::HISTORY[-2]
-          end
-          #sync {
-          #  reload unless config[:reload] == false
-          #  store_history
-          #  input(buf.strip)
-          #}
-          puts buf.strip
-        end
-        # unexpected
-        #stop
+  init do
+    self.id_var ||= IdVar::Gen.new
+    outputs.clear
+    output_filters.clear
+    config = {}
+
+    config[:colors] ||= (31..36).to_a + (91..96).to_a
+    config[:color] ||= {}
+    config[:color].merge!(
+      info:   90,
+      notice: 31,
+      event:  42,
+      url:    [4, 36],
+    )
+    config[:raw_text] ||= true
+
+    output :note do |item|
+      info = []
+      # if item["in_reply_to_status_id"]
+      #   info << "(reply to #{id2var(item["in_reply_to_status_id"])})"
+      # elsif item["retweeted_status"]
+      #   info << "(retweet of #{id2var(item["retweeted_status"]["id"])})"
+      # end
+      # if !config[:hide_time] && item["created_at"]
+      #   info << item["created_at"].to_time.strftime(config[:time_format])
+      # end
+      # if !config[:hide_app_name] && item["source"]
+      #   info << (item["source"].u =~ />(.*)</ ? $1 : 'web')
+      # end
+
+      id = "AAAAAAAAAAA" #id2var(item["id"])
+      id = id2var(item.sig)
+
+      text = item.body
+
+      if /\n/ =~ text
+        text.prepend("\n")
+        text.gsub!(/\n/, "\n       " + "|".c(:info))
+        text << "\n      "
+      else
+        text.gsub!(/\s+/, ' ')
       end
+      text = text.coloring(/@[0-9A-Za-z_]+/) { |i| color_of(i) }
+      text = text.coloring(/(^#[^\s]+)|(\s+#[^\s]+)/) { |i| color_of(i) }
+      # if config[:expand_url]
+      #   entities = (item["retweeted_status"] && item["truncated"]) ? item["retweeted_status"]["entities"] : item["entities"]
+      #   if entities
+      #     entities.values_at("urls", "media").flatten.compact.each do |entity|
+      #       url, expanded_url = entity.values_at("url", "expanded_url")
+      #       if url && expanded_url
+      #         text = text.sub(url, expanded_url)
+      #       end
+      #     end
+      #   end
+      # end
+      text = text.coloring(URI.regexp(["http", "https"]), :url)
 
-      Subscriber.new.start
-      EM.add_periodic_timer(3) do
+      # if item["_highlights"]
+      #   item["_highlights"].each do |h|
+      #     color = config[:color][:highlight].nil? ? color_of(h).to_i + 10 : :highlight
+      #     text = text.coloring(/#{h}/i, color)
+      #   end
+      # end
 
-      end
+      mark = item._mark || ""
+
+      status = [
+        mark + id.c(:info),
+        "#{item.user.name.c(color_of(item.user.name))}:",
+        text,
+        # (item["user"]["protected"] ? "[P]".c(:notice) : nil),
+        info.join(' - ').c(:info),
+      ].compact.join(" ")
+      puts status
     end
   end
 end

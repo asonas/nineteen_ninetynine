@@ -1,28 +1,25 @@
+# require 'stringio'
+# require 'monitor'
+
+require_relative "initializer"
+
 module NineteenNinetynine
-  class Renderer
+  module Renderer
     attr_accessor :items, :users, :item_queue, :loaded
-
-    def initialize
-      @items = []
-      @users = []
-      @loaded = false
-      @item_queue = []
+    def items
+      @items ||= []
     end
 
-    def output
-      while item = item_queue.shift
-        if item.user.nil?
-          user = @users.find { |u| u.pubkey == item.raw["pubkey"] }
-          item.user = user
-        end
-        puts item.decorate
-      end
+    def users
+      @users ||= []
     end
 
-    def puts_items(item)
+    def item_queue
+      @item_queue ||= []
     end
 
-    def insert
+    def colors
+      (31..36).to_a + (91..96).to_a
     end
   end
 end

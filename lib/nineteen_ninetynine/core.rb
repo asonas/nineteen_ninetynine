@@ -24,12 +24,26 @@ module NineteenNinetynine
           #stop
         end
 
+        EM.add_periodic_timer(1) do
+          last_data_received_at = $cache.read("last_data_received_at")
+          if last_data_received_at && Time.now - last_data_received_at > 30
+            start_stream
+          end
+
+          mutex = Mutex.new
+          mutex.synchronize do
+            output
+          end
+        end
+
         start_stream
       end
     end
 
     def start_stream
-      loaded = false
+      users = []
+      notes = []
+
       ws = WebSocket::Client::Simple.connect "wss://relay-jp.nostr.wirednet.jp"
 
       ws.on :message do |msg|
@@ -40,12 +54,10 @@ module NineteenNinetynine
         case payload[0]
         when "EOSE"
           #puts "Start time line: #{Time.now}"
-          loaded = true
         when "EVENT"
-          next unless loaded
           case payload[1]
           when "content"
-            puts "content"
+            $cache.write("last_data_received_at", Time.now)
             date = Time.at payload[2]["created_at"]
             content = payload[2]["content"]
             note = Event::Note.new(payload[2])
@@ -55,22 +67,24 @@ module NineteenNinetynine
             else
               note.user = user
             end
-            puts note
-
+            item_queue = $cache.read("item_queue")
             item_queue.push note
+            $cache.write("item_queue", item_queue)
           when "user"
             user = User.new(JSON.parse(payload[2]["content"])["name"], payload[2]["pubkey"])
+            users = $cache.read("users")
             users.push user
+            $cache.write("users", users)
           end
         end
       rescue JSON::ParserError => e
-        puts e
-        puts msg.data
+        #puts e
+        #puts msg.data
       end
 
       ws.on :open do
-        ws.send JSON.generate(['REQ', 'content', { kinds: [1] }])
-        ws.send JSON.generate(['REQ', 'user', { kinds: [0] }])
+        ws.send JSON.generate(["REQ", "content", { kinds: [1], since: Time.now.to_i }])
+        ws.send JSON.generate(["REQ", "user", { kinds: [0] }])
       end
 
       ws.on :close do |e|
@@ -82,14 +96,6 @@ module NineteenNinetynine
         puts e
         puts e.backtrace
       end
-
-      EM.add_periodic_timer(1) do
-        mutex = Mutex.new
-        mutex.synchronize do
-          output
-        end
-      end
     end
-
   end
 end

@@ -3,7 +3,7 @@ require 'bech32'
 module NineteenNinetynine
   module Utils
 
-    def scripted_pubkey(pubkey)
+    def self.scripted_pubkey(pubkey)
       addr = CustomAddr.new(pubkey)
       addr.to_scriptpubkey
     end
@@ -17,11 +17,11 @@ module NineteenNinetynine
       end
 
       def to_scriptpubkey
-        prog.map{|p|[p].pack("C")}.join.unpack('H*').first
+        prog.map{|p|[p].pack("C")}.join.unpack("H*").first
       end
 
       def scriptpubkey=(script)
-        values = [script].pack('H*').unpack("C*")
+        values = [script].pack("H*").unpack("C*")
         @prog = values
       end
 
@@ -34,7 +34,11 @@ module NineteenNinetynine
 
       def parse_addr(addr)
         hrp, data, spec = Bech32.decode(addr)
-        raise 'Invalid address.' if hrp.nil? || data[0].nil?
+
+        if hrp.nil? || data[0].nil?
+         puts addr
+         raise'Invalid address.'
+        end
         # raise 'Invalid witness version' if ver > 16
         prog = convert_bits(data, 5, 8, false)
         # raise 'Invalid witness program' if prog.nil? || prog.length < 2 || prog.length > 40

@@ -1,14 +1,28 @@
 module NineteenNinetynine
   module Output
-    def output
-      insert do
-        while item = item_queue.shift
-          if item.user.nil?
-            user = @users.find { |u| u.pubkey == item.raw["pubkey"] }
-            item.user = user
-          end
+    def output(name = nil, &block)
+      if block
+        outputs.delete_if { |o| o[:name] == name } if name
+        outputs << { name: name, block: block }
+      else
+        insert do
+          item_queue = $cache.read("item_queue")
+          $cache.write("item_queue", [])
 
-          puts_items(item.decorate)
+          unless item_queue.empty?
+            # puts item_queue.first.decorate
+          end
+          item_queue.each do |item|
+            if item.user.nil?
+              sleep 1
+              users = $cache.read("users")
+              user = users.find { |u| u.pubkey == item.raw["pubkey"] }
+              item.user = user
+              puts_items(item)
+            else
+              puts_items(item)
+            end
+          end
         end
       end
     end
@@ -25,14 +39,14 @@ module NineteenNinetynine
       @outputs ||= []
     end
 
-    def puts_items(item)
-      mark_color = config[:colors].sample + 10
+    def puts_items(items)
+      mark_color = colors.sample + 10
 
       [items].flatten.reverse_each do |item|
         next if output_filters.any? { |f| f.call(item) == false }
 
-        if item["text"] && !item["_stream"]
-          item['_mark'] = ' '.c(mark_color) + item['_mark'].to_s
+        if item.body && !item._stream
+          item._mark = ' '.c(mark_color) + item._mark.to_s
         end
 
         outputs.each do |o|
@@ -69,7 +83,8 @@ module NineteenNinetynine
     end
 
     def color_of(name)
-      @colors[screen_name.delete("^0-9A-Za-z_").to_i(36) % @colors].size
+      colors =  (31..36).to_a + (91..96).to_a
+      colors[name.delete("^0-9A-Za-z_").to_i(36) % colors.size]
     end
   end
 end

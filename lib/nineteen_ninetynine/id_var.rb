@@ -42,9 +42,4 @@ module NineteenNinetynine
       end
     end
   end
-
-  extend IdVar
-  init do
-    self.id_var ||= IdVar::Gen.new
-  end
 end
