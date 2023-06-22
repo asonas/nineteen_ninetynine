@@ -1,24 +1,34 @@
 # NineteenNinetynine
 
-TODO: Delete this and the text below, and describe your gem
-
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/nineteen_ninetynine`. To experiment with that code, run `bin/console` for an interactive prompt.
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
-
-Install the gem and add to the application's Gemfile by executing:
-
-    $ bundle add UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG
-
-If bundler is not being used to manage dependencies, install the gem by executing:
-
-    $ gem install UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG
+```
+gem install nineteen_ninetynine
+```
 
 ## Usage
 
-TODO: Write usage instructions here
+```
+nineteen_ninetynine
+```
+
+You can display icon images by installing `imgcat` or `img2sixel` .
+
+## TODO
+
+- [ ] Specify relay server url from environment variable
+- [ ] Test!(more test!)
+- [ ] Debug mode
+- [ ] Expand the image on the terminal
+- [ ] Expand the URL(OGP) on the terminal
+- [ ] Write event
+- [ ] Implementation `:show {event,user} $aa` command
+- [ ] Implementation `:replay $aa` command
+- [ ] Implementation of user name suggestions
+- [ ] Add alternative `nineteen_ninetynine` command (`$ 1999`)
+- [ ] Implementation for reconnecting to the relay server
+- [ ] Implementation for some options
 
 ## Development
 
