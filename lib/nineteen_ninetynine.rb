@@ -33,15 +33,17 @@ module NineteenNinetynine
   extend IdVar
 
   User = Data.define :name, :pubkey
-  Item = Data.define :content, :user, :date
 
   class Error < StandardError; end
-  XDG_CONFIG_DIR = "~/.config/1999"
+  XDG_CONFIG_DIR = "#{ENV['HOME']}/.config/1999"
   @users = []
   @items = []
-  $cache = ActiveSupport::Cache::MemoryStore.new
-  $cache.write("item_queue", [])
-  $cache.write("users", [])
+
+  unless Dir.exist?(XDG_CONFIG_DIR)
+    FileUtils.mkdir_p(XDG_CONFIG_DIR)
+    FileUtils.mkdir_p(XDG_CONFIG_DIR + "/icons")
+    FileUtils.cp(File.dirname(__FILE__) + "../assets/default.png", XDG_CONFIG_DIR + "/icons/default.png")
+  end
 
   init do
     self.id_var ||= IdVar::Gen.new
