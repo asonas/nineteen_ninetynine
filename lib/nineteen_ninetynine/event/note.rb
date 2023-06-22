@@ -11,10 +11,6 @@ module NineteenNinetynine
         @_stream = true
         @sig = content["sig"]
       end
-
-      def decorate
-        "#{@date.strftime('%H:%m')} @#{user&.name}\t#{body} #{date}"
-      end
     end
   end
 end

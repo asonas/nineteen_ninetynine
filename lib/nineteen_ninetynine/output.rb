@@ -6,21 +6,15 @@ module NineteenNinetynine
         outputs << { name: name, block: block }
       else
         insert do
-          item_queue = $cache.read("item_queue")
-          $cache.write("item_queue", [])
-
-          unless item_queue.empty?
-            # puts item_queue.first.decorate
-          end
-          item_queue.each do |item|
-            if item.user.nil?
+          while note = @notes.shift
+            if note.user.nil?
               sleep 1
-              users = $cache.read("users")
-              user = users.find { |u| u.pubkey == item.raw["pubkey"] }
-              item.user = user
-              puts_items(item)
+              # users = $cache.read("users")
+              user = @users.find { |u| u.pubkey == note.raw["pubkey"] }
+              note.user = user
+              puts_items(note)
             else
-              puts_items(item)
+              puts_items(note)
             end
           end
         end

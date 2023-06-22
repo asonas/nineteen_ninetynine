@@ -10,16 +10,20 @@ require_relative "nineteen_ninetynine/initializer"
 require_relative "nineteen_ninetynine/output"
 require_relative "nineteen_ninetynine/subscriber"
 require_relative "nineteen_ninetynine/event/note"
+require_relative "nineteen_ninetynine/event/profile"
 require_relative "nineteen_ninetynine/utils"
 
 require "active_support/cache"
 require "active_support/notifications"
 require "eventmachine"
+require "fileutils"
 require "json"
 require "monitor"
+require "net/http"
 require "readline"
 require "stringio"
 require "thread"
+require "uri"
 
 module NineteenNinetynine
   extend Core
@@ -57,19 +61,7 @@ module NineteenNinetynine
 
     output :note do |item|
       info = []
-      # if item["in_reply_to_status_id"]
-      #   info << "(reply to #{id2var(item["in_reply_to_status_id"])})"
-      # elsif item["retweeted_status"]
-      #   info << "(retweet of #{id2var(item["retweeted_status"]["id"])})"
-      # end
-      # if !config[:hide_time] && item["created_at"]
-      #   info << item["created_at"].to_time.strftime(config[:time_format])
-      # end
-      # if !config[:hide_app_name] && item["source"]
-      #   info << (item["source"].u =~ />(.*)</ ? $1 : 'web')
-      # end
 
-      id = "AAAAAAAAAAA" #id2var(item["id"])
       id = id2var(item.sig)
 
       text = item.body
@@ -106,10 +98,10 @@ module NineteenNinetynine
       mark = item._mark || ""
 
       status = [
+        item.date.strftime("%H:%M").c(:info),
         mark + id.c(:info),
-        "#{item.user.name.c(color_of(item.user.name))}:",
+        "#{item.user.icon}#{item.user.name.c(color_of(item.user.name))}:",
         text,
-        # (item["user"]["protected"] ? "[P]".c(:notice) : nil),
         info.join(' - ').c(:info),
       ].compact.join(" ")
       puts status

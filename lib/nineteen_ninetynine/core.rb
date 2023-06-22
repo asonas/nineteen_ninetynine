@@ -3,6 +3,9 @@ module NineteenNinetynine
     def _init
       inits.each { |block| class_eval(&block) }
     end
+    def users
+      @users ||= []
+    end
 
     def start
       _init
@@ -25,10 +28,11 @@ module NineteenNinetynine
         end
 
         EM.add_periodic_timer(1) do
-          last_data_received_at = $cache.read("last_data_received_at")
-          if last_data_received_at && Time.now - last_data_received_at > 30
-            start_stream
-          end
+          # Reconnect
+          # if @last_data_received_at && Time.now - @last_data_received_at > 30
+          #   # stop_stream
+          #   start_stream
+          # end
 
           mutex = Mutex.new
           mutex.synchronize do
@@ -40,11 +44,37 @@ module NineteenNinetynine
       end
     end
 
-    def start_stream
-      users = []
-      notes = []
+    def stop_stream
+      @ws.close if @ws.open?
+      @ws = nil
+    end
 
-      ws = WebSocket::Client::Simple.connect "wss://relay-jp.nostr.wirednet.jp"
+    def create_ws_client
+      @ws ||= WebSocket::Client::Simple.connect "wss://relay-jp.nostr.wirednet.jp"
+    end
+
+    def create_notes
+      @notes ||= []
+    end
+
+    def create_users
+      @users ||= []
+    end
+
+    def create_last_data_received_at
+      @last_data_received_at ||= Time.now
+    end
+
+    def last_data_received_at=(time)
+      @last_data_received_at = time
+    end
+
+    def start_stream
+      users = create_users
+      notes = create_notes
+      create_last_data_received_at
+
+      ws = create_ws_client
 
       ws.on :message do |msg|
         next if msg.data.empty?
@@ -53,33 +83,32 @@ module NineteenNinetynine
 
         case payload[0]
         when "EOSE"
-          #puts "Start time line: #{Time.now}"
+          # puts "Start time line: #{Time.now}"
         when "EVENT"
           case payload[1]
           when "content"
-            $cache.write("last_data_received_at", Time.now)
-            date = Time.at payload[2]["created_at"]
-            content = payload[2]["content"]
             note = Event::Note.new(payload[2])
             user = users.find { |u| u.pubkey == payload[2]["pubkey"] }
             if user.nil?
               ws.send JSON.generate(["REQ", "user", { kinds: [0], authors: [payload[2]["pubkey"]] }])
+
+              while user = users.find { |u| u.pubkey == payload[2]["pubkey"] }
+                note.user = user
+                sleep 0.1
+              end
             else
               note.user = user
             end
-            item_queue = $cache.read("item_queue")
-            item_queue.push note
-            $cache.write("item_queue", item_queue)
+
+            notes.push note
           when "user"
-            user = User.new(JSON.parse(payload[2]["content"])["name"], payload[2]["pubkey"])
-            users = $cache.read("users")
-            users.push user
-            $cache.write("users", users)
+            # user = User.new(JSON.parse(payload[2]["content"])["name"], payload[2]["pubkey"])
+            profile = Event::Profile.new(payload[2])
+            users.push profile
           end
         end
       rescue JSON::ParserError => e
-        #puts e
-        #puts msg.data
+        # ignore
       end
 
       ws.on :open do
@@ -88,8 +117,6 @@ module NineteenNinetynine
       end
 
       ws.on :close do |e|
-        p e.backtrace
-        exit 1
       end
 
       ws.on :error do |e|
