@@ -73,7 +73,7 @@ module NineteenNinetynine
 
       if /\n/ =~ text
         text.prepend("\n")
-        text.gsub!(/\n/, "\n       " + "|".c(:info))
+        text.gsub!(/\n/, "\n          " + "|".c(:info))
         text << "\n      "
       else
         text.gsub!(/\s+/, ' ')
