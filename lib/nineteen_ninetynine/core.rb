@@ -69,6 +69,15 @@ module NineteenNinetynine
       @last_data_received_at = time
     end
 
+    def error(e)
+      case e
+      when Exception
+        insert "[ERROR] #{e.message}\n    #{e.backtrace.join("\n    ")}".c(:notice)
+      else
+        insert "[ERROR] #{e}".c(:notice)
+      end
+    end
+
     def start_stream
       users = create_users
       notes = create_notes
