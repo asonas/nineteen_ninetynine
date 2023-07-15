@@ -6,6 +6,7 @@ require_relative "nineteen_ninetynine/core"
 require_relative "nineteen_ninetynine/ext"
 require_relative "nineteen_ninetynine/renderer"
 require_relative "nineteen_ninetynine/id_var"
+require_relative "nineteen_ninetynine/img2cat"
 require_relative "nineteen_ninetynine/initializer"
 require_relative "nineteen_ninetynine/output"
 require_relative "nineteen_ninetynine/subscriber"
@@ -31,6 +32,7 @@ module NineteenNinetynine
   extend Renderer
   extend Output
   extend IdVar
+  extend Img2cat
 
   User = Data.define :name, :pubkey
 
@@ -46,6 +48,7 @@ module NineteenNinetynine
   FileUtils.cp(File.dirname(__FILE__) + "/assets/default.png", XDG_CONFIG_DIR + "/icons/default.png")
 
   init do
+    determine_img2cat_command
     self.id_var ||= IdVar::Gen.new
     outputs.clear
     output_filters.clear
@@ -98,11 +101,12 @@ module NineteenNinetynine
       # end
 
       mark = item._mark || ""
+      icon = `#{@executable_img2cat_command} --height 1 #{item.user.icon_path}`.strip
 
       status = [
         item.date.strftime("%H:%M").c(:info),
         mark + id.c(:info),
-        "#{item.user.icon}#{item.user.name.c(color_of(item.user.name))}:",
+        "#{icon}#{item.user.name.c(color_of(item.user.name))}:",
         text,
         info.join(' - ').c(:info),
       ].compact.join(" ")

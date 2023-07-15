@@ -37,10 +37,6 @@ module NineteenNinetynine
         "#{XDG_CONFIG_DIR}/icons"
       end
 
-      def icon
-        `wezterm imgcat --height 1 #{@icon_path}`.strip
-      end
-
       def download_icon_image
         if @picture_url.start_with?("data:image/")
           File.write(icon_path, Base64.decode64(@picture_url.split(",")[1]))
@@ -57,7 +53,7 @@ module NineteenNinetynine
             puts "unknown"
             puts @picture_url
           end
-        rescue SocketError, Net::OpenTimeout => e
+        rescue SocketError, Net::OpenTimeout, OpenSSL::SSL::SSLError => e
           # ignore
         end
         else

@@ -13,7 +13,7 @@ gem install nineteen_ninetynine
 nineteen_ninetynine
 ```
 
-You can display icon images by installing `imgcat` or `img2sixel` .
+You can display icon images by installing `imgcat` or `wezterm imgcat`, `img2sixel`.
 
 ## TODO
 

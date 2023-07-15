@@ -2,7 +2,6 @@ require 'bech32'
 
 module NineteenNinetynine
   module Utils
-
     def self.scripted_pubkey(pubkey)
       addr = CustomAddr.new(pubkey)
       addr.to_scriptpubkey
