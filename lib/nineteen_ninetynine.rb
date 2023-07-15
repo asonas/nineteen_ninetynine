@@ -42,8 +42,8 @@ module NineteenNinetynine
   unless Dir.exist?(XDG_CONFIG_DIR)
     FileUtils.mkdir_p(XDG_CONFIG_DIR)
     FileUtils.mkdir_p(XDG_CONFIG_DIR + "/icons")
-    FileUtils.cp(File.dirname(__FILE__) + "../assets/default.png", XDG_CONFIG_DIR + "/icons/default.png")
   end
+  FileUtils.cp(File.dirname(__FILE__) + "/assets/default.png", XDG_CONFIG_DIR + "/icons/default.png")
 
   init do
     self.id_var ||= IdVar::Gen.new
